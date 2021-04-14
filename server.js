@@ -2,17 +2,86 @@ const mysql = require('mysql');
 const inquirer = require('inquirer');
 require('dotenv').config();
 
-// create the connection information for the sql database
+
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
 
-  // Your port; if not 3306
   port: 3306,
 
-  // Your username
   user: process.env.DB_USER,
 
-  // Your password
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
+});
+
+const welcome = () => {
+
+}
+
+const viewOpt = () => {
+
+}
+
+const viewDept = () => {
+
+}
+
+const viewRoles = () => {
+
+}
+
+const viewEmployees = (opt) => {
+// switch(opt)
+// case "viewByManager"
+// default --"viewAll"
+}
+
+const addOpt = () => {
+
+}
+
+const addDept = () => {
+
+}
+
+const addRole = () => {
+
+}
+
+const addEmployee = () => {
+
+}
+
+const updateOpt = () => {
+
+}
+
+const updateEmployee = (opt) => {
+
+}
+
+const delOpt = () => {
+
+}
+
+const delDept = () => {
+
+}
+
+const delRole = () => {
+
+}
+
+const delEmployee = () => {
+
+}
+
+const fullName = (first, last) => {
+  return `${first} ${last}`
+}
+
+connection.connect((err) => {
+  if (err) throw err;
+  
+  welcome();
 });
