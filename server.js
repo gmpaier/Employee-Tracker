@@ -163,6 +163,7 @@ const addRole = () => {
     ]).then((answer) => { 
       connection.query(`SELECT id FROM department WHERE name = ${answer.list}`, (err, results) => {
         if (err) throw err;
+        console.log(results)
         connection.query('INSERT INTO role SET ?', 
         {
           title: answer.title,
@@ -180,30 +181,66 @@ const addRole = () => {
 }
 
 const addEmployee = () => {
-
+  connection.query('SELECT title FROM role', (err, results) => {
+    if (err) throw err;
+    inquirer
+    .prompt([
+      {
+        name: 'first',
+        message: "What is your new employee's first name?"
+      },
+      {
+        name: 'last',
+        message: "What is your new employee's last name?"
+      },
+      {
+        type: 'list',
+        name: "role",
+        message: "Which role will this employee take?",
+        choices(){
+          const choiceArray = [];
+          results.forEach(({title}) => {
+            choiceArray.push(title);
+          });
+          return choiceArray;
+        },
+      }
+    ])
+  })
 }
 
 const updateOpt = () => {
-  inquirer
-  .prompt({
-    name: 'route',
-    type: 'list',
-    message: 'What would you like to update?',
-    choices: ['UPDATE EMPLOYEE ROLE', 'UPDATE EMPLOYEE MANAGER', 'BACK'],
-  })
-  .then((answer) => {
-    switch(answer.route){
-      case 'UPDATE EMPLOYEE ROLE':
-        return updateEmployee(role);
-      case 'UPDATE EMPLOYEE MANAGER':
-        return updateEmployee(man);
-      case 'BACK':
-        return welcome();
-    }
+  connection.query('SELECT CONCAT("first_name"," ","last_name") AS Name FROM employee', (err, results) => {
+    if (err) throw err;
+    inquirer
+    .prompt([
+      {
+        name: 'route',
+        type: 'list',
+        message: 'What would you like to update?',
+        choices: ['UPDATE EMPLOYEE ROLE', 'UPDATE EMPLOYEE MANAGER', 'BACK'],
+      },
+
+    ])
+    .then((answer) => {
+      switch(answer.route){
+        case 'UPDATE EMPLOYEE ROLE':
+          return updateEmployee("role");
+        case 'UPDATE EMPLOYEE MANAGER':
+          return updateEmployee("man");
+        case 'BACK':
+          return welcome();
+      }
+    });
   });
 }
 
 const updateEmployee = (opt) => {
+  switch(opt){
+    case "role":
+      return connection.query('SELECT title FROM role', (err, results) => {})
+    case "man":
+  }
 
 }
 
@@ -239,10 +276,6 @@ const delRole = () => {
 
 const delEmployee = () => {
 
-}
-
-const fullName = (first, last) => {
-  return `${first} ${last}`
 }
 
 connection.connect((err) => {
