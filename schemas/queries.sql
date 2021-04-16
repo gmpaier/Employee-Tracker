@@ -1,5 +1,16 @@
--- view departments w/o Budget
+-- view departments w/o Budget (messy)
 SELECT * FROM department;
+
+-- view departments w/ Budget (clean)
+SELECT department.name as Department, SUM(role.salary) as Budget, COUNT(employee.id) as "Employee Count" 
+FROM department
+LEFT JOIN role 
+	ON role.department_id = department.id
+LEFT JOIN employee
+	ON employee.role_id = role.id
+GROUP BY Department; 
+
+-- view departments 
 
 -- view roles (messy)
 SELECT * FROM role;
@@ -12,32 +23,41 @@ SELECT * FROM employee
 WHERE manager_id = ?;
 
 -- view roles (clean)
-SELECT role.title as Title, role.salary as Salary, department.name AS Department
+SELECT role.title as Role, CONCAT("$", role.salary) as Salary, department.name AS Department
 FROM role
 JOIN department ON role.department_id = department.id;
 
 -- view employees (clean)
-SELECT a.first_name AS First, a.last_name AS Last, role.title as Title, role.salary as Salary, CONCAT(b.first_name, " ", b.last_name) AS Manager
+SELECT a.first_name AS First, a.last_name AS Last, role.title as Title, department.name as Department, CONCAT("$", role.salary) as Salary, CONCAT(b.first_name, " ", b.last_name) AS Manager
 FROM employee a
-JOIN employee b 
-	on a.manager_id = b.id
+LEFT JOIN employee b 
+	ON a.manager_id = b.id
 JOIN role 
-	ON a.role_id = role.id;
-    
+	ON a.role_id = role.id
+JOIN Department
+	ON role.department_id = department.id;
+
 -- view employee by manager (clean)
-SELECT employee.first_name AS First, employee.last_name AS Last, role.title as Title, role.salary as Salary
+SELECT employee.first_name AS First, employee.last_name AS Last, role.title as Title, CONCAT("$", role.salary) as Salary
 FROM employee
 JOIN role 
 	ON a.role_id = role.id
 WHERE manager_id = ?;
 
--- add department
+-- add department (VALUE)
 INSERT INTO department(name)
 VALUE(?);
 
--- add role
+-- add department (SET)
+-- INSERT INTO department SET ?
+
+-- add role (VALUE)
 INSERT INTO role(title, salary, department_id)
 VALUE(?, ?, ?);
+
+-- add role (SET)
+-- INSERT INTO role SET ?
+
 
 -- add employee
 INSERT INTO employee(first_name, last_name, role_id, manager_id)
@@ -84,8 +104,8 @@ SET role_id = NULL
 WHERE role_id = ?;
 
 -- delete department (clean|deletes roles & employees)
-DELETE FROM department
-WHERE id = ?;
+DELETE FROM employee
+WHERE role_id = ?;
 
 SELECT id FROM role
 WHERE department_id = ?;
@@ -93,8 +113,8 @@ WHERE department_id = ?;
 DELETE FROM role
 WHERE department_id = ?;
 
-DELETE FROM employee
-WHERE role_id = ?;
+DELETE FROM department
+WHERE id = ?;
 
 -- delete role (clean|deletes employees)
 DELETE FROM role

@@ -1,3 +1,4 @@
 node_modules
 package-lock.json
 workspace_04_15.code-workspace
+.env

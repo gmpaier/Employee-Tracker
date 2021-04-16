@@ -1,4 +1,3 @@
-"use strict";
 const mysql = require('mysql');
 const inquirer = require('inquirer');
 require('dotenv').config();
@@ -47,7 +46,7 @@ const viewOpt = () => {
     name: 'route',
     type: 'list',
     message: 'What would you like to view?',
-    choices: ['VIEW DEPARTMENT', 'VIEW ROLES', 'VIEW EMPLOYEES', 'BACK'],
+    choices: ['VIEW DEPARTMENT', 'VIEW ROLES', 'VIEW EMPLOYEES', 'VIEW EMPLOYEES BY MANAGER','BACK'],
   })
   .then((answer) => {
     switch(answer.route){
@@ -57,6 +56,8 @@ const viewOpt = () => {
         return viewRoles();
       case 'VIEW EMPLOYEES':
         return viewEmployees();
+      case 'VIEW EMPLOYEES BY MANAGER':
+        return viewEmployees("byMan");
       case 'BACK':
         return welcome();
     }
@@ -64,7 +65,7 @@ const viewOpt = () => {
 }
 
 const viewDept = () => {
-  connection.query('SELECT * FROM department;', (err, results) => {
+  connection.query('SELECT department.name as Department, CONCAT("$", SUM(IFNULL(role.salary, 0))) as Budget, COUNT(employee.id) as "Employee Count" FROM department LEFT JOIN role ON role.department_id = department.id LEFT JOIN employee ON employee.role_id = role.id GROUP BY Department;', (err, results) => {
     if (err) throw err;
     console.table(results);
     welcome();
@@ -72,7 +73,7 @@ const viewDept = () => {
 }
 
 const viewRoles = () => {
-  connection.query('SELECT role.title as Title, role.salary as Salary, department.name AS Department FROM role JOIN department ON role.department_id = department.id;', (err, results) => {
+  connection.query('SELECT role.title as Role, CONCAT("$", role.salary) as Salary, department.name AS Department FROM role JOIN department ON role.department_id = department.id;', (err, results) => {
     if (err) throw err;
     console.table(results);
     welcome();
@@ -80,13 +81,45 @@ const viewRoles = () => {
 }
 
 const viewEmployees = (opt) => {
-  connection.query('SELECT a.id, a.first_name AS First, a.last_name AS Last, role.title as Title, role.salary as Salary, CONCAT(b.first_name, " ", b.last_name) AS Manager FROM employee a JOIN employee b on a.manager_id = b.id JOIN role ON a.role_id = role.id;', (err, results) => {
-    if (err) throw err;
-    console.table(results);
-    welcome();
-  })
+  switch(opt){
+    case "byMan":
+      return connection.query('SELECT id, CONCAT(employee.first_name, " ", employee.last_name) as manager FROM employee WHERE id = ANY (SELECT manager_id FROM employee);',  (err, results) => {
+       if (err) throw err;
+       inquirer
+       .prompt({
+         name: 'choice',
+         type: 'rawlist',
+         choices() {
+           const choiceArray = [];
+           results.forEach(({manager}) => {
+           choiceArray.push(manager);
+         });
+               return choiceArray;
+             },
+             message: 'Whose employees would you like to see?',
+           },
+       ).then((answer) => {
+         let choiceId;
+         results.forEach((employee) => { 
+          if(answer.choice === employee.manager){
+             choiceId = employee.id;
+           }
+         });
+         connection.query(`SELECT employee.first_name as First, employee.last_name, role.title as Role, department.name as Department, CONCAT("$", role.salary) as Salary FROM employee JOIN role on employee.role_id = role.id JOIN Department ON role.department_id = department.id WHERE employee.manager_id = ${choiceId}`, (err, results) => {
+           if (err) throw err;
+           console.table(results);
+           welcome();
+         })
+       });
+      });
+    default: 
+      connection.query('SELECT a.first_name AS First, a.last_name AS Last, role.title as Role, department.name as Department, CONCAT("$", role.salary) as Salary, CONCAT(b.first_name, " ", b.last_name) AS Manager FROM employee a LEFT JOIN employee b ON a.manager_id = b.id JOIN role ON a.role_id = role.id JOIN Department ON role.department_id = department.id;', (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        welcome();
+      });
+  }
 }
-
 
 const addOpt = () => {
   inquirer
@@ -161,24 +194,26 @@ const addRole = () => {
           return choiceArray;
         },
       }
-    ]).then((answer) => { 
-      connection.query(`SELECT id FROM department WHERE name = ${answer.list}`, (err, results) => {
-        if (err) throw err;
-        console.log(results)
-        connection.query('INSERT INTO role SET ?', 
-        {
-          title: answer.title,
-          salary: answer.salary,
-          department_id: results[0].id
-        },
-        (error) => {
-          if (error) throw err;
-          console.log(`${answer.title} successfully added to roles.`)
-          viewRoles();
-        });
+    ]).then((answer) => {
+      let choiceId;
+      results.forEach((dept) => {
+        if(dept.name === answer.department){
+          choiceId = dept.id;
+        }
+      })
+      connection.query('INSERT INTO role SET ?', 
+      {
+        title: answer.title,
+        salary: answer.salary,
+        department_id: choiceId
+      },
+      (error) => {
+        if (error) throw err;
+        console.log(`${answer.title} successfully added to roles.`)
+        viewRoles();
       });
-    });
-  });
+    })
+  })
 }
 
 const addEmployee = () => {
@@ -242,7 +277,6 @@ const updateEmployee = (opt) => {
       return connection.query('SELECT title FROM role', (err, results) => {})
     case "man":
   }
-
 }
 
 const delOpt = () => {
@@ -281,6 +315,6 @@ const delEmployee = () => {
 
 connection.connect((err) => {
   if (err) throw err;
-  console.log("Welcome to the Employee Tracker program. \n")
+  console.log("\n Welcome to the Employee Tracker program.")
   welcome();
 });

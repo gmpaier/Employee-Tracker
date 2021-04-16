@@ -1,6 +1,6 @@
 switch(opt){
  case "byMan":
-   connection.query("SELECT CONCAT('a.first_name', ' ', 'a.last_name') AS Manager FROM employee a JOIN employee b ON a.id = b.manager_id GROUP BY Manager",  (err, results) => {
+   connection.query("SELECT *, CONCAT('a.first_name', ' ', 'a.last_name') AS Manager FROM employee a JOIN employee b ON a.id = b.manager_id GROUP BY Manager",  (err, results) => {
     if (err) throw err;
     inquirer
     .prompt({
