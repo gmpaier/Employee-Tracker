@@ -1,3 +1,4 @@
+"use strict";
 const mysql = require('mysql');
 const inquirer = require('inquirer');
 require('dotenv').config();
@@ -130,7 +131,7 @@ const addDept = () => {
 }
 
 const addRole = () => {
-  connection.query('SELECT name FROM deparment', (err, results) => {
+  connection.query('SELECT * FROM deparment', (err, results) => {
     if (err) throw err;
     inquirer
     .prompt([
