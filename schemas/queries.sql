@@ -2,15 +2,13 @@
 SELECT * FROM department;
 
 -- view departments w/ Budget (clean)
-SELECT department.name as Department, SUM(role.salary) as Budget, COUNT(employee.id) as "Employee Count" 
+SELECT department.name as Department, SUM(IFNULL(role.salary, 0)) as Budget, COUNT(employee.id) as "Employee Count" 
 FROM department
 LEFT JOIN role 
 	ON role.department_id = department.id
 LEFT JOIN employee
 	ON employee.role_id = role.id
 GROUP BY Department; 
-
--- view departments 
 
 -- view roles (messy)
 SELECT * FROM role;
@@ -36,6 +34,12 @@ JOIN role
 	ON a.role_id = role.id
 JOIN Department
 	ON role.department_id = department.id;
+
+-- view managers (clean)
+SELECT id, CONCAT(employee.first_name, " ", employee.last_name) as Manager
+FROM employee
+WHERE id = ANY
+	(SELECT manager_id FROM employee);
 
 -- view employee by manager (clean)
 SELECT employee.first_name AS First, employee.last_name AS Last, role.title as Title, CONCAT("$", role.salary) as Salary
