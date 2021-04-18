@@ -3,7 +3,7 @@ const inquirer = require('inquirer');
 require('dotenv').config();
 const cTable = require('console.table');
 
-
+  //creates connection to mysql database via .env parameters; please set up the .env for your local computer if you wish to use this program
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
 
@@ -15,6 +15,7 @@ const connection = mysql.createConnection({
   database: process.env.DB_NAME,
 });
 
+  //"main menu" for program, navigates to view, add, update, and delete option functions
 const welcome = () => {
   inquirer
   .prompt({
@@ -40,6 +41,7 @@ const welcome = () => {
   });
 }
 
+  //view options - navigates to view department, roles, or employees functions
 const viewOpt = () => {
   inquirer
   .prompt({
@@ -64,6 +66,7 @@ const viewOpt = () => {
   });
 }
 
+  //displays all departments to user
 const viewDept = () => {
   connection.query('SELECT department.name as Department, CONCAT("$", SUM(IFNULL(role.salary, 0))) as Budget, COUNT(employee.id) as "Employee Count" FROM department LEFT JOIN role ON role.department_id = department.id LEFT JOIN employee ON employee.role_id = role.id GROUP BY Department;', (err, results) => {
     if (err) throw err;
@@ -71,7 +74,8 @@ const viewDept = () => {
     welcome();
   })
 }
-
+  
+  //displays all roles to user
 const viewRoles = () => {
   connection.query('SELECT role.title as Role, CONCAT("$", role.salary) as Salary, department.name AS Department FROM role JOIN department ON role.department_id = department.id;', (err, results) => {
     if (err) throw err;
@@ -80,6 +84,7 @@ const viewRoles = () => {
   })
 }
 
+  //by default: displays all employees to user. opt parameter allows for view employees by manager
 const viewEmployees = (opt) => {
   switch(opt){
     case "byMan":
@@ -121,6 +126,7 @@ const viewEmployees = (opt) => {
   }
 }
 
+  //add options - navigates to add department, role, or employee functions
 const addOpt = () => {
   inquirer
   .prompt({
@@ -143,6 +149,7 @@ const addOpt = () => {
   });
 }
 
+  //queries the user for department info and creates a new department
 const addDept = () => {
   inquirer
   .prompt({
@@ -163,6 +170,7 @@ const addDept = () => {
   })
 }
 
+  //queries the user for role info and creates a new role
 const addRole = () => {
   connection.query('SELECT * FROM department', (err, results) => {
     if (err) throw err;
@@ -216,6 +224,7 @@ const addRole = () => {
   })
 }
 
+  //queries the user for employee info and creates a new employee
 const addEmployee = () => {
   connection.query('SELECT * FROM role', (err, resRole) => {
     if (err) throw err;
@@ -285,6 +294,7 @@ const addEmployee = () => {
   });
 }
 
+  //update options - ask user to select an employee to update and to choose either update role or manager. triggers update employee
 const updateOpt = () => {
   connection.query('SELECT *, CONCAT(first_name," ",last_name) AS name FROM employee', (err, results) => {
     if (err) throw err;
@@ -328,6 +338,7 @@ const updateOpt = () => {
   });
 }
 
+  //updates either employee manager or role based on opt parameter 
 const updateEmployee = (opt, employee) => {
   switch(opt){
     case "role":
@@ -401,6 +412,7 @@ const updateEmployee = (opt, employee) => {
   }
 }
 
+  //delete options - navigates to delete department, role, and employee functions
 const delOpt = () => {
   inquirer
   .prompt({
@@ -423,6 +435,7 @@ const delOpt = () => {
   });
 }
 
+  //deletes a department, along with all roles and employees within said department. resets employees' manager to null if manager deleted.
 const delDept = () => {
   connection.query('SELECT * FROM department', (err, results) => {
     if (err) throw err;
@@ -492,6 +505,7 @@ const delDept = () => {
   })
 }
 
+  //deletes a role, along with all employees with said role. resets employees' manager to null if manager deleted.
 const delRole = () => {
   connection.query('SELECT * FROM role', (err, results) => {
     if (err) throw err;
@@ -553,7 +567,7 @@ const delRole = () => {
     })
   })
 }
-
+  //deletees an employee. resets employees' manager to null if manager deleted.
 const delEmployee = () => {
   connection.query('SELECT *, CONCAT(first_name, " ", last_name) as name FROM employee', (err, results) => {
     if (err) throw err;
@@ -612,6 +626,7 @@ const delEmployee = () => {
   })
 }
 
+  //Connection to server, triggers welcome function 
 connection.connect((err) => {
   if (err) throw err;
   console.log("\n Welcome to the Employee Tracker program.")
