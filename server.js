@@ -164,7 +164,7 @@ const addDept = () => {
 }
 
 const addRole = () => {
-  connection.query('SELECT * FROM deparment', (err, results) => {
+  connection.query('SELECT * FROM department', (err, results) => {
     if (err) throw err;
     inquirer
     .prompt([
@@ -286,7 +286,7 @@ const addEmployee = () => {
 }
 
 const updateOpt = () => {
-  connection.query('SELECT *, CONCAT("first_name"," ","last_name") AS name FROM employee', (err, results) => {
+  connection.query('SELECT *, CONCAT(first_name," ",last_name) AS name FROM employee', (err, results) => {
     if (err) throw err;
     inquirer
     .prompt([
@@ -429,7 +429,7 @@ const delDept = () => {
     inquirer
     .prompt([
       {
-        name: 'dept',
+        name: 'department',
         type: 'rawlist',
         message: "Which department would you like to delete?",
         choices(){
@@ -457,23 +457,33 @@ const delDept = () => {
               choiceDept = dept;
             }
           })
-          connection.query('DELETE FROM employee WHERE role_id = ANY (SELECT id FROM role WHERE ?)',
-          {
-            department_id: choiceDept.id
-          }, (err) => {
+          connection.query('UPDATE employee SET ? WHERE manager_id IN (SELECT myid FROM (SELECT id as myid from employee WHERE role_id = ANY (SELECT id FROM role WHERE ?)) as b)',[
+            {
+              manager_id: null
+            },
+            {
+              department_id: choiceDept.id
+            }
+          ], (err) => {
             if (err) throw err;
-            connection.query('DELETE FROM role WHERE ?', 
+            connection.query('DELETE FROM employee WHERE role_id = ANY (SELECT id FROM role WHERE ?)',
             {
               department_id: choiceDept.id
             }, (err) => {
               if (err) throw err;
-              connection.query('DELETE FROM department WHERE ?', 
+              connection.query('DELETE FROM role WHERE ?', 
               {
-                id: choiceDept.id
+                department_id: choiceDept.id
               }, (err) => {
                 if (err) throw err;
-                console.log(`${choiceDept.name} successfully deleted from departments.`);
-                viewDept();
+                connection.query('DELETE FROM department WHERE ?', 
+                {
+                  id: choiceDept.id
+                }, (err) => {
+                  if (err) throw err;
+                  console.log(`${choiceDept.name} successfully deleted from departments.`);
+                  viewDept();
+                })
               })
             })
           })
@@ -516,18 +526,27 @@ const delRole = () => {
               choiceRole = role;
             }
           })
-          connection.query('DELETE FROM employee WHERE ?', 
-          {
-            role_id: choiceRole.id
-          }, (err) => {
-            if (err) throw err;
-            connection.query('DELETE FROM role WHERE ?',
+          connection.query('UPDATE employee SET ? WHERE manager_id IN (SELECT myid FROM(SELECT id AS myid FROM employee WHERE ?) as b)',[
             {
-              id: choiceRole.id
+              manager_id: null
+            },
+            {
+              role_id: choiceRole.id
+            }], (err) => {
+              if (err) throw err;
+            connection.query('DELETE FROM employee WHERE ?', 
+            {
+              role_id: choiceRole.id
             }, (err) => {
               if (err) throw err;
-              console.log(`Role of ${choiceRole.title} deleted successfully.`);
-              viewRoles();
+              connection.query('DELETE FROM role WHERE ?',
+              {
+                id: choiceRole.id
+              }, (err) => {
+                if (err) throw err;
+                console.log(`Role of ${choiceRole.title} deleted successfully.`);
+                viewRoles();
+              })
             })
           })
       }
